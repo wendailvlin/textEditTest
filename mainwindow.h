@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include<QVector>
+#include<QFileDialog>
 #include"commondata.h"
 
 namespace Ui {
@@ -24,13 +25,15 @@ public:
 
 public slots:
     void send();
+    void sendFile();
 
 private:
     Ui::MainWindow *ui;
     MyTextEdit *myTextEdit;
     QPushButton *btn;
+    QPushButton *fileBtn;
     QTextEdit* showText;
-    QVBoxLayout* layout;
+    QGridLayout * layout;
 
 
 };

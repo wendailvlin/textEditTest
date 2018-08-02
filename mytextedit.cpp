@@ -8,11 +8,15 @@ MyTextEdit::MyTextEdit(QWidget *parent)
 
 QStringList MyTextEdit::getUrl(QString text)//获取绝对路径
 {
-    QStringList list = text.split("\n");
     QStringList urls;
+    if(text.isEmpty()) return urls;
+
+    QStringList list = text.split("\n");
     foreach (QString url, list) {
         if(!url.isEmpty()){
-            urls.append(url.split("///").at(1));
+            QStringList str = url.split("///");
+            if(str.size()>=2)
+                urls.append(str.at(1));
         }
     }
     return urls;
@@ -22,8 +26,6 @@ QVector<MsgInfo> MyTextEdit::getMsgList()
 {
     mGetMsgList.clear();
     QString doc = this->document()->toPlainText();
-//    qDebug()<<"doc===="<<doc<<endl;
-//    qDebug()<<"doc size===="<<doc.size()<<endl;
     QString text="";//存储文本信息
     int indexUrl = 0;
     int count = mMsgList.size();
@@ -33,7 +35,7 @@ QVector<MsgInfo> MyTextEdit::getMsgList()
 //    }
     for(int i=0;i<doc.size();i++){
         if(doc[i]==QChar::ObjectReplacementCharacter){
-            qDebug()<<"!!!!is ObjectReplacementCharacter"<<endl;
+//            qDebug()<<"!!!!is ObjectReplacementCharacter"<<endl;
             if(!text.isEmpty()){
                 QPixmap pix;
                 insertMsgList(mGetMsgList,"text",text,pix);
@@ -54,10 +56,11 @@ QVector<MsgInfo> MyTextEdit::getMsgList()
     }
     if(!text.isEmpty()){
         QPixmap pix;
-//        qDebug()<<"text==="<<text<<endl;
         insertMsgList(mGetMsgList,"text",text,pix);
         text.clear();
     }
+    mMsgList.clear();
+    this->clear();
     return mGetMsgList;
 }
 
@@ -98,8 +101,8 @@ QPixmap MyTextEdit::getFileIconPixmap(const QString &url)
     pix.fill();
 
     QPainter painter;
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setFont(font);
+   // painter.setRenderHint(QPainter::Antialiasing, true);
+    //painter.setFont(font);
     painter.begin(&pix);
     // 文件图标
     QRect rect(0, 0, 50, 50);
@@ -154,7 +157,7 @@ bool MyTextEdit::canInsertFromMimeData(const QMimeData *source) const
 void MyTextEdit::insertFromMimeData(const QMimeData *source)
 {
        QStringList urls = getUrl(source->text());
-
+       if(urls.isEmpty()) return;
        foreach (QString url, urls) {
             if(isImage(url))
                 insertImages(url);
@@ -189,6 +192,19 @@ void MyTextEdit::keyPressEvent(QKeyEvent *e)
 
 }
 
+void MyTextEdit::insertFileFromUrl(const QStringList &urls)
+{
+    if(urls.isEmpty()) return ;
+
+    foreach (QString url, urls){
+         if(isImage(url))
+             insertImages(url);
+         else
+             insertTextFile(url);
+    }
+
+}
+
 void MyTextEdit::insertImages(const QString &url)
 {
     QImage image(url);
@@ -212,7 +228,7 @@ void MyTextEdit::insertTextFile(const QString &url)
 {
     QFileInfo fileInfo(url);
     if(fileInfo.isDir()){
-        QMessageBox::information(this,"拖拽文件","只允许拖拽单个文件!");
+        QMessageBox::information(this,"提示","只允许发送单个文件!");
     }
     else{
         if(fileInfo.size()>100*1024*1024){
@@ -221,9 +237,7 @@ void MyTextEdit::insertTextFile(const QString &url)
         else{
             QPixmap pix = getFileIconPixmap(url);
             QTextCursor cursor = this->textCursor();
-           // qDebug()<<"插入文件前:"<<cursor.anchor();
             cursor.insertImage(pix.toImage(),url);
-           // qDebug()<<"插入文件后:"<<cursor.anchor();
             insertMsgList(mMsgList,"file",url,pix);
         }
     }
